@@ -1,34 +1,62 @@
 package com.saurs.resources;
 
-import com.saurs.enums.Role;
-import com.saurs.models.TokenResponse;
-import com.saurs.models.User;
-import com.saurs.services.JwtService;
+import com.saurs.models.*;
+import com.saurs.services.AuthService;
+import io.vertx.mutiny.core.http.HttpServerRequest;
+import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 
-import java.util.UUID;
+
+import java.net.http.HttpRequest;
+import java.util.logging.Logger;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 
 @Path("/auth")
 public class AuthResource {
 
-    @Inject
-    JwtService jwtService;
+    private static final Logger LOGGER = Logger.getLogger(AuthResource.class.getName());
 
-    @GET
+    private final AuthService authService;
+
+    @Inject
+    public AuthResource(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @POST
     @Path("/login")
     @Produces(APPLICATION_JSON)
-    public TokenResponse login() {
-        User user = new User();
-        user.setId(UUID.randomUUID());
-        user.setEmail("test@mail.com");
-        user.setPassword("123456");
-        user.getRoles().add(Role.USER);
+    public TokenResponse login(@RequestBody @Valid Auth auth) {
+        return authService.login(auth);
+    }
 
-        return jwtService.generateTokens(user);
+    @POST
+    @PermitAll
+    @Path("/register")
+    @Produces(APPLICATION_JSON)
+    public TokenResponse register(@RequestBody @Valid Register userRegister) {
+        return authService.register(userRegister);
+    }
+
+    @POST
+    @PermitAll
+    @Path("/refresh")
+    @Produces(APPLICATION_JSON)
+    public TokenResponse refresh(@RequestBody @Valid RefreshToken token) {
+        return authService.refresh(token);
+    }
+
+    @GET
+    @PermitAll
+    @Path("/whoami")
+    @Produces(APPLICATION_JSON)
+    public User getAuthenticatedUser(@HeaderParam(HttpHeaders.AUTHORIZATION) String token) {
+        return authService.getAuthenticatedUser(token);
     }
 }

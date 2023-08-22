@@ -1,6 +1,6 @@
 package com.saurs.enums;
 
-public enum Role {
+public enum RoleEnum {
     ADMIN,
     USER
 }
